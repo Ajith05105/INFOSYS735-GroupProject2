@@ -8,8 +8,8 @@ terraform {
     }
   }
 
-  # Bootstrap state lives in the bucket it created. Backend blocks cannot use
-  # variables, so these values are literal.
+  # Dev state lives in the bucket created by bootstrap. Backend blocks cannot
+  # use variables, so these values are literal.
   backend "s3" {
     bucket       = "anygroup-dev-bootstrap-tfstate-ap-southeast-6"
     key          = "envs/dev/terraform.tfstate"
