@@ -5,7 +5,7 @@ provider "aws" {
     tags = {
       Project     = "anygroup"
       Owner       = "Ajith05105"
-      Environment = "dev"
+      Environment = var.environment
       ManagedBy   = "terraform"
     }
   }
