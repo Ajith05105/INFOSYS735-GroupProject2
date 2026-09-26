@@ -46,12 +46,6 @@ data "aws_iam_policy_document" "plan" {
     actions   = ["s3:GetObject"]
     resources = ["${aws_s3_bucket.state.arn}/envs/*"]
   }
-
-  # Plan takes the state lock, so it must create and remove the lock file
-  statement {
-    actions   = ["s3:PutObject", "s3:DeleteObject"]
-    resources = ["${aws_s3_bucket.state.arn}/envs/*.tflock"]
-  }
 }
 
 resource "aws_iam_role_policy" "plan" {
