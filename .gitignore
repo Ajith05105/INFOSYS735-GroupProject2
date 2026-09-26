@@ -1,0 +1,34 @@
+# Local .terraform directories (providers and modules downloaded by init)
+**/.terraform/*
+
+# State files. State lives in S3; local copies must never be committed.
+*.tfstate
+*.tfstate.*
+
+# Saved plan files can contain sensitive values
+*.tfplan
+*.tfplan.json
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Variable files may contain secrets. Commit only non-secret examples.
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+
+# Local overrides that should not be shared
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# CLI configuration files
+.terraformrc
+terraform.rc
+
+# macOS
+.DS_Store
+
+# Note: .terraform.lock.hcl is intentionally NOT ignored. Commit it.
