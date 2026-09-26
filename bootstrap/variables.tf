@@ -6,8 +6,8 @@ variable "aws_region" {
 
 variable "github_repository" {
   type        = string
-  description = "GitHub repository allowed to assume the CI roles, in owner/name form."
-  default     = "Ajith05105/INFOSYS735-GroupProject2"
+  description = "GitHub repository allowed to assume the CI roles, as it appears in the OIDC sub claim: owner@owner-id/repo@repo-id. The IDs are public and never change, so a recreated repo with the same name is not trusted."
+  default     = "Ajith05105@75721773/INFOSYS735-GroupProject2@1387092923"
 }
 
 variable "github_deploy_branch" {
