@@ -46,6 +46,12 @@ data "aws_iam_policy_document" "plan" {
     actions   = ["s3:GetObject"]
     resources = ["${aws_s3_bucket.state.arn}/envs/*"]
   }
+
+  # Read-only EC2 lookups: AZs, VPCs, subnets
+  statement {
+    actions   = ["ec2:Describe*"]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_role_policy" "plan" {
@@ -97,6 +103,22 @@ data "aws_iam_policy_document" "deploy" {
   }
 
   # Infrastructure permissions get added here as modules need them
+
+  # Network module: VPC and subnets
+  statement {
+    actions = [
+      "ec2:CreateSubnet",
+      "ec2:CreateTags",
+      "ec2:CreateVpc",
+      "ec2:DeleteSubnet",
+      "ec2:DeleteTags",
+      "ec2:DeleteVpc",
+      "ec2:Describe*",
+      "ec2:ModifySubnetAttribute",
+      "ec2:ModifyVpcAttribute",
+    ]
+    resources = ["*"]
+  }
 }
 
 resource "aws_iam_role_policy" "deploy" {
