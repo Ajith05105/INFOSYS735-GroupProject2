@@ -247,9 +247,9 @@ locals {
   nacl_rules = {
     public = {
       ingress = [
-        { protocol = "tcp", from = 443, to = 443, cidr = "0.0.0.0/0" },    # CloudFront to the ALB, HTTPS only
-        { protocol = "tcp", from = 1024, to = 65535, cidr = "0.0.0.0/0" }, # replies to the NAT and ALB
-        { protocol = "-1", from = 0, to = 0, cidr = var.vpc_cidr },        # private tiers heading out through NAT
+        { protocol = "tcp", from = var.origin_port, to = var.origin_port, cidr = "0.0.0.0/0" }, # CloudFront to the ALB
+        { protocol = "tcp", from = 1024, to = 65535, cidr = "0.0.0.0/0" },                      # replies to the NAT and ALB
+        { protocol = "-1", from = 0, to = 0, cidr = var.vpc_cidr },                             # private tiers heading out through NAT
       ]
       egress = [local.all_out]
     }

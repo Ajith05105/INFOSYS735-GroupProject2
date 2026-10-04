@@ -12,3 +12,8 @@ variable "app_port" {
   type        = number
   description = "Port the app tier instances listen on."
 }
+
+variable "origin_port" {
+  type        = number
+  description = "Port CloudFront uses to reach the internet-facing ALB: 443 with a domain, 80 without."
+}

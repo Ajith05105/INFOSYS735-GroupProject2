@@ -15,3 +15,9 @@ variable "app_port" {
   description = "Port the app tier instances listen on. Shared by the network NACLs and the app tier."
   default     = 8080
 }
+
+variable "domain_name" {
+  type        = string
+  description = "Domain with a Route 53 hosted zone in this account, e.g. anygroup-demo.click. Null means no domain: CloudFront reaches the ALB over HTTP, since no certificate can match the ALB's AWS hostname. Viewers always reach CloudFront over HTTPS."
+  default     = null
+}
