@@ -9,3 +9,9 @@ variable "vpc_cidr" {
   description = "CIDR block for this environment's VPC."
   default     = "10.0.0.0/16"
 }
+
+variable "app_port" {
+  type        = number
+  description = "Port the app tier instances listen on. Shared by the network NACLs and the app tier."
+  default     = 8080
+}

@@ -2,6 +2,7 @@ module "network" {
   source      = "../../modules/network"
   environment = var.environment
   vpc_cidr    = var.vpc_cidr
+  app_port    = var.app_port
 }
 
 # Add the other modules below as they are built (security, web, app, data,

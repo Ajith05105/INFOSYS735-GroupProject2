@@ -36,28 +36,12 @@ resource "aws_iam_role" "plan" {
   assume_role_policy = data.aws_iam_policy_document.plan_trust.json
 }
 
-data "aws_iam_policy_document" "plan" {
-  statement {
-    actions   = ["s3:ListBucket"]
-    resources = [aws_s3_bucket.state.arn]
-  }
-
-  statement {
-    actions   = ["s3:GetObject"]
-    resources = ["${aws_s3_bucket.state.arn}/envs/*"]
-  }
-
-  # Read-only EC2 lookups: AZs, VPCs, subnets
-  statement {
-    actions   = ["ec2:Describe*"]
-    resources = ["*"]
-  }
-}
-
-resource "aws_iam_role_policy" "plan" {
-  name   = "anygroup-dev-cicd-plan-policy"
-  role   = aws_iam_role.plan.id
-  policy = data.aws_iam_policy_document.plan.json
+# Plan has to refresh every resource type the stack manages, so it gets AWS's
+# read-only policy instead of a hand-kept list that breaks each time a module
+# adds a new service. It covers reading the state bucket too.
+resource "aws_iam_role_policy_attachment" "plan" {
+  role       = aws_iam_role.plan.name
+  policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
 }
 
 # Deploy role: plan and apply, assumable only from the deploy branch
@@ -104,20 +88,19 @@ data "aws_iam_policy_document" "deploy" {
 
   # Infrastructure permissions get added here as modules need them
 
-  # Network module: VPC and subnets
+  # EC2 covers the whole network and compute layer: VPC, subnets, routing, NAT
+  # instances, NACLs, endpoints, security groups, launch templates. Listing
+  # actions one by one failed applies every time a module needed a new one,
+  # and only an admin can re-apply bootstrap. Pinned to the project region.
   statement {
-    actions = [
-      "ec2:CreateSubnet",
-      "ec2:CreateTags",
-      "ec2:CreateVpc",
-      "ec2:DeleteSubnet",
-      "ec2:DeleteTags",
-      "ec2:DeleteVpc",
-      "ec2:Describe*",
-      "ec2:ModifySubnetAttribute",
-      "ec2:ModifyVpcAttribute",
-    ]
+    actions   = ["ec2:*"]
     resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:RequestedRegion"
+      values   = [var.aws_region]
+    }
   }
 }
 
