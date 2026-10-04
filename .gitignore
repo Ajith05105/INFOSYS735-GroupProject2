@@ -32,3 +32,6 @@ terraform.rc
 .DS_Store
 
 # Note: .terraform.lock.hcl is intentionally NOT ignored. Commit it.
+
+# Lambda zips built by the archive provider
+**/.build/

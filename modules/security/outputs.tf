@@ -37,3 +37,8 @@ output "permissions_boundary_arn" {
   description = "Boundary that every role created in the dev stack must carry."
   value       = local.boundary_arn
 }
+
+output "app_role_name" {
+  description = "App tier role name, for modules that grant it extra permissions."
+  value       = aws_iam_role.instance["app"].name
+}

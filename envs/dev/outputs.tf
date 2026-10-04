@@ -42,3 +42,13 @@ output "site_url" {
   description = "Public URL of the site, through CloudFront."
   value       = module.edge.site_url
 }
+
+output "forecast_glue_job" {
+  description = "Run this Glue job to start the forecasting chain on demand."
+  value       = module.forecasting.glue_job_name
+}
+
+output "recommendations_table" {
+  description = "DynamoDB table with perishable stock recommendations."
+  value       = module.forecasting.recommendations_table
+}

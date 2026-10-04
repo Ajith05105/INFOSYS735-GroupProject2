@@ -36,6 +36,8 @@ module "app" {
   instance_profile = module.security.app_instance_profile
   app_port         = var.app_port
   db_host          = module.data.address
+  db_name          = module.data.db_name
+  db_secret_arn    = module.data.master_secret_arn
 }
 
 module "web" {
@@ -85,4 +87,15 @@ module "edge" {
   }
 }
 
-# Still to add: the forecasting feature.
+module "forecasting" {
+  source                   = "../../modules/forecasting"
+  environment              = var.environment
+  permissions_boundary_arn = module.security.permissions_boundary_arn
+  glue_subnet_id           = module.network.app_subnet_ids[0]
+  db_sg_id                 = module.security.db_sg_id
+  db_host                  = module.data.address
+  db_name                  = module.data.db_name
+  db_secret_arn            = module.data.master_secret_arn
+  app_role_name            = module.security.app_role_name
+  alert_email              = var.alert_email
+}

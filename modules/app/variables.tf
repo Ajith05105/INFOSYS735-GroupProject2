@@ -56,3 +56,15 @@ variable "max_size" {
   description = "Maximum instance count. The report's production value is 16."
   default     = 4
 }
+
+variable "db_name" {
+  type        = string
+  description = "Oracle database (service) name, for seeding sample data."
+  default     = ""
+}
+
+variable "db_secret_arn" {
+  type        = string
+  description = "Secret with the database credentials. Empty skips seeding sample data."
+  default     = ""
+}
