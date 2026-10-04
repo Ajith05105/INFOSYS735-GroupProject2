@@ -128,7 +128,26 @@ data "aws_iam_policy_document" "deploy" {
     }
   }
 
-  # ELB and Auto Scaling create their service-linked roles on first use
+  # Data module: RDS, plus what manage_master_user_password needs to create
+  # the Secrets Manager secret and encrypt with the AWS managed keys
+  statement {
+    actions = [
+      "kms:CreateGrant",
+      "kms:DescribeKey",
+      "kms:ListAliases",
+      "rds:*",
+      "secretsmanager:*",
+    ]
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:RequestedRegion"
+      values   = [var.aws_region]
+    }
+  }
+
+  # ELB, Auto Scaling and RDS create their service-linked roles on first use
   statement {
     actions   = ["iam:CreateServiceLinkedRole"]
     resources = ["*"]
@@ -136,7 +155,7 @@ data "aws_iam_policy_document" "deploy" {
     condition {
       test     = "StringEquals"
       variable = "iam:AWSServiceName"
-      values   = ["autoscaling.amazonaws.com", "elasticloadbalancing.amazonaws.com"]
+      values   = ["autoscaling.amazonaws.com", "elasticloadbalancing.amazonaws.com", "rds.amazonaws.com"]
     }
   }
 

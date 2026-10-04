@@ -19,6 +19,13 @@ module "security" {
   origin_port = local.origin_port
 }
 
+module "data" {
+  source      = "../../modules/data"
+  environment = var.environment
+  subnet_ids  = module.network.data_subnet_ids
+  db_sg_id    = module.security.db_sg_id
+}
+
 module "app" {
   source           = "../../modules/app"
   environment      = var.environment
@@ -28,6 +35,7 @@ module "app" {
   instance_sg_id   = module.security.app_sg_id
   instance_profile = module.security.app_instance_profile
   app_port         = var.app_port
+  db_host          = module.data.address
 }
 
 module "web" {
@@ -64,4 +72,4 @@ module "observability" {
   }
 }
 
-# Still to add: data, edge and the forecasting feature.
+# Still to add: edge and the forecasting feature.

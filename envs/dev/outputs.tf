@@ -32,3 +32,8 @@ output "dashboard_name" {
   description = "CloudWatch dashboard for both tiers."
   value       = module.observability.dashboard_name
 }
+
+output "db_address" {
+  description = "Oracle endpoint, reachable only from the app tier."
+  value       = module.data.address
+}
