@@ -1,6 +1,8 @@
 #!/bin/bash
 # Web tier: Apache serving the storefront placeholder. Each instance shows its
-# own ID and AZ so load balancing across AZs is visible on refresh.
+# own ID and AZ so load balancing across AZs is visible on refresh. /api/ is
+# proxied to the app tier's internal ALB, and the page shows which app
+# instance answered and whether it can reach the database.
 set -euo pipefail
 
 dnf install -y httpd
@@ -13,6 +15,11 @@ AZ=$(meta placement/availability-zone)
 # Load balancer health check target
 echo OK > /var/www/html/health
 
+cat > /etc/httpd/conf.d/app-proxy.conf <<'CONF'
+ProxyPass /api/ http://${app_alb_dns_name}/
+ProxyPassReverse /api/ http://${app_alb_dns_name}/
+CONF
+
 cat > /var/www/html/index.html <<EOF
 <!doctype html>
 <html lang="en">
@@ -24,6 +31,19 @@ cat > /var/www/html/index.html <<EOF
     <tr><th align="left">Instance</th><td>$INSTANCE_ID</td></tr>
     <tr><th align="left">Availability Zone</th><td>$AZ</td></tr>
   </table>
+  <p id="app">Calling the app tier...</p>
+  <p><img src="/images/catalogue-sample.svg" alt="Catalogue image served from S3 through CloudFront" width="320" height="120"></p>
+  <script>
+    fetch("/api/")
+      .then((r) => r.json())
+      .then((d) => {
+        document.getElementById("app").textContent =
+          "App tier: " + d.instance + " in " + d.az + ". Database: " + d.database + ".";
+      })
+      .catch(() => {
+        document.getElementById("app").textContent = "App tier unreachable.";
+      });
+  </script>
 </body>
 </html>
 EOF
