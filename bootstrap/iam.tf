@@ -102,10 +102,108 @@ data "aws_iam_policy_document" "deploy" {
       values   = [var.aws_region]
     }
   }
+
+  # Security module: workload roles and instance profiles under /anygroup/.
+  # CreateRole only succeeds when the new role carries the workload boundary,
+  # so deploy cannot mint a role more powerful than the boundary allows.
+  statement {
+    actions   = ["iam:CreateRole", "iam:PutRolePermissionsBoundary"]
+    resources = ["arn:aws:iam::${local.account_id}:role/anygroup/*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "iam:PermissionsBoundary"
+      values   = [aws_iam_policy.workload_boundary.arn]
+    }
+  }
+
+  statement {
+    actions = [
+      "iam:AttachRolePolicy",
+      "iam:DeleteRole",
+      "iam:DeleteRolePolicy",
+      "iam:DetachRolePolicy",
+      "iam:GetRole",
+      "iam:GetRolePolicy",
+      "iam:ListAttachedRolePolicies",
+      "iam:ListInstanceProfilesForRole",
+      "iam:ListRolePolicies",
+      "iam:PutRolePolicy",
+      "iam:TagRole",
+      "iam:UntagRole",
+      "iam:UpdateAssumeRolePolicy",
+      "iam:UpdateRole",
+    ]
+    resources = ["arn:aws:iam::${local.account_id}:role/anygroup/*"]
+  }
+
+  statement {
+    actions = [
+      "iam:AddRoleToInstanceProfile",
+      "iam:CreateInstanceProfile",
+      "iam:DeleteInstanceProfile",
+      "iam:GetInstanceProfile",
+      "iam:RemoveRoleFromInstanceProfile",
+      "iam:TagInstanceProfile",
+      "iam:UntagInstanceProfile",
+    ]
+    resources = ["arn:aws:iam::${local.account_id}:instance-profile/anygroup/*"]
+  }
+
+  # Workload roles can only be handed to the services that run them
+  statement {
+    actions   = ["iam:PassRole"]
+    resources = ["arn:aws:iam::${local.account_id}:role/anygroup/*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "iam:PassedToService"
+      values   = ["ec2.amazonaws.com"]
+    }
+  }
 }
 
 resource "aws_iam_role_policy" "deploy" {
   name   = "anygroup-dev-cicd-deploy-policy"
   role   = aws_iam_role.deploy.id
   policy = data.aws_iam_policy_document.deploy.json
+}
+
+data "aws_caller_identity" "current" {}
+
+locals {
+  account_id = data.aws_caller_identity.current.account_id
+}
+
+# Ceiling for every role the deploy role creates (EC2 instance roles, and the
+# Glue, Lambda and flow log roles that come later). A role's effective
+# permissions are its policies intersected with this, so even an admin policy
+# attached to a workload role cannot reach IAM, billing or anything outside
+# these services. Owned here so CI cannot edit its own ceiling.
+data "aws_iam_policy_document" "workload_boundary" {
+  statement {
+    actions = [
+      "cloudwatch:*",
+      "ec2:Describe*",
+      "ec2messages:*",
+      "glue:*",
+      "kms:Decrypt",
+      "kms:GenerateDataKey",
+      "logs:*",
+      "s3:*",
+      "secretsmanager:DescribeSecret",
+      "secretsmanager:GetSecretValue",
+      "sns:Publish",
+      "ssm:*",
+      "ssmmessages:*",
+    ]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_policy" "workload_boundary" {
+  name        = "anygroup-workload-boundary"
+  path        = "/anygroup/"
+  description = "Permissions boundary for every workload role created by the deploy role"
+  policy      = data.aws_iam_policy_document.workload_boundary.json
 }
