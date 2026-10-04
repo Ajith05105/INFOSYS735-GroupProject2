@@ -132,6 +132,18 @@ data "aws_iam_policy_document" "deploy" {
     }
   }
 
+  # Observability: alert topic, alarms, dashboard and the flow log group
+  statement {
+    actions   = ["cloudwatch:*", "logs:*", "sns:*"]
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:RequestedRegion"
+      values   = [var.aws_region]
+    }
+  }
+
   # ELB and Auto Scaling create their service-linked roles on first use
   statement {
     actions   = ["iam:CreateServiceLinkedRole"]
@@ -213,7 +225,7 @@ data "aws_iam_policy_document" "deploy" {
     condition {
       test     = "StringEquals"
       variable = "iam:PassedToService"
-      values   = ["ec2.amazonaws.com"]
+      values   = ["ec2.amazonaws.com", "vpc-flow-logs.amazonaws.com"]
     }
   }
 }

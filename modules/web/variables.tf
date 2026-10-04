@@ -56,3 +56,8 @@ variable "max_size" {
   description = "Maximum instance count. The report's production value is 12."
   default     = 4
 }
+
+variable "app_alb_dns_name" {
+  type        = string
+  description = "Internal ALB DNS name that Apache proxies /api/ to."
+}
