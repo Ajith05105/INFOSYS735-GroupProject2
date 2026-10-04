@@ -43,4 +43,25 @@ module "web" {
   app_alb_dns_name    = module.app.alb_dns_name
 }
 
-# Still to add: data, observability, edge and the forecasting feature.
+module "observability" {
+  source                   = "../../modules/observability"
+  environment              = var.environment
+  vpc_id                   = module.network.vpc_id
+  permissions_boundary_arn = module.security.permissions_boundary_arn
+  alert_email              = var.alert_email
+
+  tiers = {
+    web = {
+      asg_name                = module.web.asg_name
+      alb_arn_suffix          = module.web.alb_arn_suffix
+      target_group_arn_suffix = module.web.target_group_arn_suffix
+    }
+    app = {
+      asg_name                = module.app.asg_name
+      alb_arn_suffix          = module.app.alb_arn_suffix
+      target_group_arn_suffix = module.app.target_group_arn_suffix
+    }
+  }
+}
+
+# Still to add: data, edge and the forecasting feature.

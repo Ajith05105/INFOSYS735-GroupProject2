@@ -109,6 +109,10 @@ resource "aws_autoscaling_group" "app" {
   health_check_type         = "ELB"
   health_check_grace_period = 300
 
+  # Capacity metrics for the dashboard
+  metrics_granularity = "1Minute"
+  enabled_metrics     = ["GroupDesiredCapacity", "GroupInServiceInstances"]
+
   launch_template {
     id      = aws_launch_template.app.id
     version = aws_launch_template.app.latest_version
