@@ -5,7 +5,14 @@ module "network" {
   app_port    = var.app_port
 }
 
-# Add the other modules below as they are built (security, web, app, data,
+module "security" {
+  source      = "../../modules/security"
+  environment = var.environment
+  vpc_id      = module.network.vpc_id
+  app_port    = var.app_port
+}
+
+# Add the other modules below as they are built (web, app, data,
 # feature). Pass network outputs in with module.network.<output>, for example:
 #
 # module "web" {

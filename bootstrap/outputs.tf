@@ -17,3 +17,8 @@ output "deploy_role_arn" {
   description = "Role that deploy branch workflows assume for terraform apply."
   value       = aws_iam_role.deploy.arn
 }
+
+output "workload_boundary_arn" {
+  description = "Permissions boundary every workload role must carry."
+  value       = aws_iam_policy.workload_boundary.arn
+}
