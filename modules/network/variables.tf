@@ -12,3 +12,14 @@ variable "vpc_cidr" {
     error_message = "vpc_cidr must be a /16, for example 10.0.0.0/16."
   }
 }
+
+variable "nat_instance_type" {
+  type        = string
+  description = "Instance type for the NAT instances. The AMI architecture follows it automatically."
+  default     = "t4g.nano"
+}
+
+variable "app_port" {
+  type        = number
+  description = "Port the app tier instances listen on, opened in the app tier NACL."
+}
