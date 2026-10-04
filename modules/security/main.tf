@@ -41,7 +41,7 @@ locals {
   # peer is the security group on the other end of the rule. The one ingress
   # rule without a peer uses the CloudFront prefix list instead.
   ingress = {
-    alb-from-cloudfront = { sg = "alb", port = 443, peer = null }
+    alb-from-cloudfront = { sg = "alb", port = var.origin_port, peer = null }
     web-from-alb        = { sg = "web", port = 80, peer = "alb" }
     app-alb-from-web    = { sg = "app-alb", port = 80, peer = "web" }
     app-from-app-alb    = { sg = "app", port = var.app_port, peer = "app-alb" }

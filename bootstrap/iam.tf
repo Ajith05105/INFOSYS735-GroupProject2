@@ -119,6 +119,45 @@ data "aws_iam_policy_document" "deploy" {
     }
   }
 
+  # Web and app tiers: load balancers, Auto Scaling groups and their scaling
+  # policies, and ACM certificates for HTTPS. Pinned to the project region.
+  statement {
+    actions   = ["acm:*", "autoscaling:*", "elasticloadbalancing:*"]
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:RequestedRegion"
+      values   = [var.aws_region]
+    }
+  }
+
+  # ELB and Auto Scaling create their service-linked roles on first use
+  statement {
+    actions   = ["iam:CreateServiceLinkedRole"]
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "iam:AWSServiceName"
+      values   = ["autoscaling.amazonaws.com", "elasticloadbalancing.amazonaws.com"]
+    }
+  }
+
+  # DNS records for certificate validation and the origin hostname, only used
+  # when a domain is set. Route 53 is global, so no region condition.
+  statement {
+    actions = [
+      "route53:ChangeResourceRecordSets",
+      "route53:GetChange",
+      "route53:GetHostedZone",
+      "route53:ListHostedZones",
+      "route53:ListResourceRecordSets",
+      "route53:ListTagsForResource",
+    ]
+    resources = ["*"]
+  }
+
   # Security module: workload roles and instance profiles under /anygroup/.
   # CreateRole only succeeds when the new role carries the workload boundary,
   # so deploy cannot mint a role more powerful than the boundary allows.

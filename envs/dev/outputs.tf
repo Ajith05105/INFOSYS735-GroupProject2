@@ -22,3 +22,8 @@ output "data_subnet_ids" {
   description = "Data tier subnet IDs, one per AZ."
   value       = module.network.data_subnet_ids
 }
+
+output "web_alb_dns_name" {
+  description = "Internet-facing ALB. Only answers requests that come through CloudFront."
+  value       = module.web.alb_dns_name
+}
