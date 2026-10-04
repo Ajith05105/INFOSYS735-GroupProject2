@@ -44,6 +44,22 @@ resource "aws_iam_role_policy_attachment" "plan" {
   policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
 }
 
+# ReadOnlyAccess leaves out a few read actions. They get added here as plan
+# needs them.
+data "aws_iam_policy_document" "plan" {
+  # Security module reads the CloudFront origin-facing prefix list
+  statement {
+    actions   = ["ec2:GetManagedPrefixListEntries"]
+    resources = ["*"]
+  }
+}
+
+resource "aws_iam_role_policy" "plan" {
+  name   = "anygroup-dev-cicd-plan-policy"
+  role   = aws_iam_role.plan.id
+  policy = data.aws_iam_policy_document.plan.json
+}
+
 # Deploy role: plan and apply, assumable only from the deploy branch
 data "aws_iam_policy_document" "deploy_trust" {
   statement {
