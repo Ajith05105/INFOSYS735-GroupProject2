@@ -32,3 +32,8 @@ output "app_instance_profile" {
   description = "Instance profile name for the app tier."
   value       = aws_iam_instance_profile.instance["app"].name
 }
+
+output "permissions_boundary_arn" {
+  description = "Boundary that every role created in the dev stack must carry."
+  value       = local.boundary_arn
+}
