@@ -72,4 +72,17 @@ module "observability" {
   }
 }
 
-# Still to add: edge and the forecasting feature.
+module "edge" {
+  source        = "../../modules/edge"
+  environment   = var.environment
+  origin_domain = module.web.origin_domain
+  origin_secret = module.web.origin_secret
+  domain_name   = var.domain_name
+
+  providers = {
+    aws           = aws
+    aws.us_east_1 = aws.us_east_1
+  }
+}
+
+# Still to add: the forecasting feature.

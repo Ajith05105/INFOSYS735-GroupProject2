@@ -32,6 +32,7 @@ cat > /var/www/html/index.html <<EOF
     <tr><th align="left">Availability Zone</th><td>$AZ</td></tr>
   </table>
   <p id="app">Calling the app tier...</p>
+  <p><img src="/images/catalogue-sample.svg" alt="Catalogue image served from S3 through CloudFront" width="320" height="120"></p>
   <script>
     fetch("/api/")
       .then((r) => r.json())

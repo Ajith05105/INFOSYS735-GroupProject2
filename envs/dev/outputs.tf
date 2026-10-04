@@ -37,3 +37,8 @@ output "db_address" {
   description = "Oracle endpoint, reachable only from the app tier."
   value       = module.data.address
 }
+
+output "site_url" {
+  description = "Public URL of the site, through CloudFront."
+  value       = module.edge.site_url
+}

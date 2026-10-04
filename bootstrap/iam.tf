@@ -116,6 +116,33 @@ data "aws_iam_policy_document" "deploy" {
     }
   }
 
+  # Edge module: CloudFront is a global service with no region to pin
+  statement {
+    actions   = ["cloudfront:*"]
+    resources = ["*"]
+  }
+
+  # WAF for CloudFront and the CloudFront viewer certificate live in us-east-1
+  statement {
+    actions   = ["acm:*", "wafv2:*"]
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:RequestedRegion"
+      values   = ["us-east-1"]
+    }
+  }
+
+  # Application buckets only, never the state bucket
+  statement {
+    actions = ["s3:*"]
+    resources = [
+      "arn:aws:s3:::anygroup-*-catalogue-*",
+      "arn:aws:s3:::anygroup-*-datalake-*",
+    ]
+  }
+
   # Observability: alert topic, alarms, dashboard and the flow log group
   statement {
     actions   = ["cloudwatch:*", "logs:*", "sns:*"]

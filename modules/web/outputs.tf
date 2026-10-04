@@ -17,3 +17,14 @@ output "target_group_arn_suffix" {
   description = "Target group ARN suffix, the TargetGroup dimension in CloudWatch."
   value       = aws_lb_target_group.web.arn_suffix
 }
+
+output "origin_domain" {
+  description = "Hostname CloudFront should use for this ALB: origin.<domain> with a domain, the ALB's DNS name without."
+  value       = local.https ? "origin.${var.domain_name}" : aws_lb.web.dns_name
+}
+
+output "origin_secret" {
+  description = "Header value the ALB listener requires on every forwarded request."
+  value       = random_password.origin_secret.result
+  sensitive   = true
+}
