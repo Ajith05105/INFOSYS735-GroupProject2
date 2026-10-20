@@ -16,7 +16,7 @@ variable "vpc_cidr" {
 variable "nat_instance_type" {
   type        = string
   description = "Instance type for the NAT instances. The AMI architecture follows it automatically."
-  default     = "t4g.nano"
+  default     = "t4g.micro"
 }
 
 variable "app_port" {
