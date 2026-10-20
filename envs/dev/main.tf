@@ -19,6 +19,17 @@ module "security" {
   origin_port = local.origin_port
 }
 
+module "app" {
+  source           = "../../modules/app"
+  environment      = var.environment
+  vpc_id           = module.network.vpc_id
+  subnet_ids       = module.network.app_subnet_ids
+  alb_sg_id        = module.security.app_alb_sg_id
+  instance_sg_id   = module.security.app_sg_id
+  instance_profile = module.security.app_instance_profile
+  app_port         = var.app_port
+}
+
 module "web" {
   source              = "../../modules/web"
   environment         = var.environment
@@ -29,15 +40,7 @@ module "web" {
   instance_sg_id      = module.security.web_sg_id
   instance_profile    = module.security.web_instance_profile
   domain_name         = var.domain_name
+  app_alb_dns_name    = module.app.alb_dns_name
 }
 
-# Add the other modules below as they are built (web, app, data,
-# feature). Pass network outputs in with module.network.<output>, for example:
-#
-# module "web" {
-#   source              = "../../modules/web"
-#   environment         = var.environment
-#   vpc_id              = module.network.vpc_id
-#   alb_subnet_ids      = module.network.public_subnet_ids
-#   instance_subnet_ids = module.network.web_subnet_ids
-# }
+# Still to add: data, observability, edge and the forecasting feature.

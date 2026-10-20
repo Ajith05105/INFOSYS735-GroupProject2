@@ -147,8 +147,11 @@ resource "aws_launch_template" "web" {
   image_id               = data.aws_ami.al2023.id
   instance_type          = var.instance_type
   vpc_security_group_ids = [var.instance_sg_id]
-  user_data              = filebase64("${path.module}/user_data.sh")
   update_default_version = true
+
+  user_data = base64encode(templatefile("${path.module}/user_data.sh", {
+    app_alb_dns_name = var.app_alb_dns_name
+  }))
 
   iam_instance_profile {
     name = var.instance_profile
