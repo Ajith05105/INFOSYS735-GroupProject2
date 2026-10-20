@@ -191,6 +191,10 @@ resource "aws_autoscaling_group" "web" {
   health_check_type         = "ELB" # replaces instances that run but stop serving
   health_check_grace_period = 300
 
+  # Capacity metrics for the dashboard
+  metrics_granularity = "1Minute"
+  enabled_metrics     = ["GroupDesiredCapacity", "GroupInServiceInstances"]
+
   launch_template {
     id      = aws_launch_template.web.id
     version = aws_launch_template.web.latest_version

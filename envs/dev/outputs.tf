@@ -27,3 +27,8 @@ output "web_alb_dns_name" {
   description = "Internet-facing ALB. Only answers requests that come through CloudFront."
   value       = module.web.alb_dns_name
 }
+
+output "dashboard_name" {
+  description = "CloudWatch dashboard for both tiers."
+  value       = module.observability.dashboard_name
+}

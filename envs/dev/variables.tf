@@ -21,3 +21,9 @@ variable "domain_name" {
   description = "Domain with a Route 53 hosted zone in this account, e.g. anygroup-demo.click. Null means no domain: CloudFront reaches the ALB over HTTP, since no certificate can match the ALB's AWS hostname. Viewers always reach CloudFront over HTTPS."
   default     = null
 }
+
+variable "alert_email" {
+  type        = string
+  description = "Email subscribed to operational alerts (scaling events, alarms). Null skips the subscription."
+  default     = null
+}
