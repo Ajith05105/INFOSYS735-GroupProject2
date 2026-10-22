@@ -1,6 +1,6 @@
 #!/bin/bash
 # App tier: stand-in for the .NET Core backend. A small HTTP service that
-# reports which instance and AZ answered, and whether the Oracle port on the
+# reports which instance and AZ answered, and whether the PostgreSQL port on the
 # database is reachable, which proves the web -> app -> db chain end to end.
 # ponytail: TCP check only. Real queries arrive with the forecasting feature.
 set -euo pipefail
@@ -24,7 +24,7 @@ def database_status():
     if not DB_HOST:
         return "not configured"
     try:
-        socket.create_connection((DB_HOST, 1521), timeout=2).close()
+        socket.create_connection((DB_HOST, 5432), timeout=2).close()
         return "reachable"
     except OSError:
         return "unreachable"
@@ -77,7 +77,7 @@ systemctl enable --now anygroup-app
 # runs this; the first to create the tables loads them and the rest skip.
 if [ -n "${db_secret_arn}" ]; then
   dnf install -y python3-pip
-  pip3 install --quiet oracledb boto3
+  pip3 install --quiet 'psycopg[binary]' boto3
   cat > /opt/anygroup-app/seed.py <<'PY'
 import datetime as dt
 import json
@@ -85,11 +85,12 @@ import random
 import time
 
 import boto3
-import oracledb
+import psycopg
 
 SECRET_ARN = "${db_secret_arn}"
 REGION = "${aws_region}"
-DSN = "${db_host}:1521/${db_name}"
+DB_HOST = "${db_host}"
+DB_NAME = "${db_name}"
 
 # id, name, perishable, typical units sold per day
 PRODUCTS = [
@@ -111,7 +112,7 @@ def connect():
         try:
             secret = boto3.client("secretsmanager", region_name=REGION).get_secret_value(SecretId=SECRET_ARN)
             creds = json.loads(secret["SecretString"])
-            return oracledb.connect(user=creds["username"], password=creds["password"], dsn=DSN)
+            return psycopg.connect(host=DB_HOST, dbname=DB_NAME, user=creds["username"], password=creds["password"], sslmode="require")
         except Exception as error:
             print("waiting for database:", error, flush=True)
             time.sleep(30)
@@ -121,15 +122,13 @@ def connect():
 conn = connect()
 cur = conn.cursor()
 try:
-    cur.execute("CREATE TABLE PRODUCTS (PRODUCT_ID VARCHAR2(10) PRIMARY KEY, NAME VARCHAR2(50), PERISHABLE CHAR(1))")
-except oracledb.DatabaseError as error:
-    if error.args[0].code == 955:  # ORA-00955: name already used
-        raise SystemExit("already seeded")
-    raise
-cur.execute("CREATE TABLE SALES (SALE_DATE DATE, PRODUCT_ID VARCHAR2(10), QUANTITY NUMBER)")
-cur.execute("CREATE TABLE INVENTORY_BATCH (BATCH_ID VARCHAR2(20) PRIMARY KEY, PRODUCT_ID VARCHAR2(10), QUANTITY_ON_HAND NUMBER, EXPIRY_DATE DATE)")
+    cur.execute("CREATE TABLE products (product_id VARCHAR(10) PRIMARY KEY, name VARCHAR(50), perishable CHAR(1))")
+except psycopg.errors.DuplicateTable:
+    raise SystemExit("already seeded")
+cur.execute("CREATE TABLE sales (sale_date DATE, product_id VARCHAR(10), quantity INTEGER)")
+cur.execute("CREATE TABLE inventory_batch (batch_id VARCHAR(20) PRIMARY KEY, product_id VARCHAR(10), quantity_on_hand INTEGER, expiry_date DATE)")
 
-cur.executemany("INSERT INTO PRODUCTS VALUES (:1, :2, :3)", [p[:3] for p in PRODUCTS])
+cur.executemany("INSERT INTO products VALUES (%s, %s, %s)", [p[:3] for p in PRODUCTS])
 
 random.seed(42)
 today = dt.date.today()
@@ -139,7 +138,7 @@ for i in range(120):
     for pid, _, _, base in PRODUCTS:
         expected = base * WEEKDAY_FACTOR[day.weekday()] * (1 + 0.002 * i)
         sales.append((day, pid, max(0, round(random.gauss(expected, base * 0.08)))))
-cur.executemany("INSERT INTO SALES VALUES (:1, :2, :3)", sales)
+cur.executemany("INSERT INTO sales VALUES (%s, %s, %s)", sales)
 
 # Two batches per perishable line, sized to cover the next fortnight's demand
 # (about 20 days of base sales once the sales trend is included),
@@ -155,7 +154,7 @@ for pid, _, perishable, base in PRODUCTS:
         batches.append((pid + "-B1", pid, 150, today + dt.timedelta(days=7)))
     else:
         batches += [(pid + "-B1", pid, base * 10, today + dt.timedelta(days=5)), (pid + "-B2", pid, base * 10, today + dt.timedelta(days=12))]
-cur.executemany("INSERT INTO INVENTORY_BATCH VALUES (:1, :2, :3, :4)", batches)
+cur.executemany("INSERT INTO inventory_batch VALUES (%s, %s, %s, %s)", batches)
 
 conn.commit()
 print(f"seeded {len(sales)} sales rows and {len(batches)} batches", flush=True)

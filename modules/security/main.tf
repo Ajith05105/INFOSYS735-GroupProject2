@@ -6,7 +6,7 @@ data "aws_ec2_managed_prefix_list" "cloudfront" {
 }
 
 locals {
-  oracle_port = 1521
+  db_port = 5432
 
   # Created by bootstrap. Every role here must carry it.
   boundary_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:policy/anygroup/anygroup-workload-boundary"
@@ -23,7 +23,7 @@ resource "aws_security_group" "this" {
     web     = "Web tier (Apache): HTTP from the internet-facing ALB only"
     app-alb = "Internal ALB: HTTP from the web tier only"
     app     = "App tier (.NET Core): app port from the internal ALB only"
-    db      = "Data tier (RDS Oracle): Oracle from the app tier only"
+    db      = "Data tier (RDS PostgreSQL): PostgreSQL from the app tier only"
   }
 
   name        = "anygroup-${var.environment}-${each.key}-sg"
@@ -45,7 +45,7 @@ locals {
     web-from-alb        = { sg = "web", port = 80, peer = "alb" }
     app-alb-from-web    = { sg = "app-alb", port = 80, peer = "web" }
     app-from-app-alb    = { sg = "app", port = var.app_port, peer = "app-alb" }
-    db-from-app         = { sg = "db", port = local.oracle_port, peer = "app" }
+    db-from-app         = { sg = "db", port = local.db_port, peer = "app" }
   }
 
   # Rules without a peer go to any address on 443: packages, Systems Manager,
@@ -55,7 +55,7 @@ locals {
     web-to-app-alb = { sg = "web", port = 80, peer = "app-alb" }
     web-to-https   = { sg = "web", port = 443, peer = null }
     app-alb-to-app = { sg = "app-alb", port = var.app_port, peer = "app" }
-    app-to-db      = { sg = "app", port = local.oracle_port, peer = "db" }
+    app-to-db      = { sg = "app", port = local.db_port, peer = "db" }
     app-to-https   = { sg = "app", port = 443, peer = null }
   }
 }

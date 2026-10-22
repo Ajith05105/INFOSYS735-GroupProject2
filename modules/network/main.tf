@@ -271,11 +271,11 @@ locals {
       egress = [local.all_out]
     }
 
-    # Only Oracle traffic with the app tier, plus primary/standby traffic
+    # Only PostgreSQL traffic with the app tier, plus primary/standby traffic
     # between the two data subnets. No internet in either direction.
     data = {
       ingress = concat(
-        [for c in local.tier_cidrs.app : { protocol = "tcp", from = 1521, to = 1521, cidr = c }],
+        [for c in local.tier_cidrs.app : { protocol = "tcp", from = 5432, to = 5432, cidr = c }],
         [for c in local.tier_cidrs.data : { protocol = "-1", from = 0, to = 0, cidr = c }],
       )
       egress = concat(

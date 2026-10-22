@@ -34,7 +34,7 @@ output "dashboard_name" {
 }
 
 output "db_address" {
-  description = "Oracle endpoint, reachable only from the app tier."
+  description = "PostgreSQL endpoint, reachable only from the app tier."
   value       = module.data.address
 }
 
