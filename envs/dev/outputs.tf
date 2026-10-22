@@ -32,3 +32,23 @@ output "dashboard_name" {
   description = "CloudWatch dashboard for both tiers."
   value       = module.observability.dashboard_name
 }
+
+output "db_address" {
+  description = "Oracle endpoint, reachable only from the app tier."
+  value       = module.data.address
+}
+
+output "site_url" {
+  description = "Public URL of the site, through CloudFront."
+  value       = module.edge.site_url
+}
+
+output "forecast_run_now_trigger" {
+  description = "Start this Glue trigger to run the forecasting chain on demand."
+  value       = module.forecasting.run_now_trigger
+}
+
+output "recommendations_table" {
+  description = "DynamoDB table with perishable stock recommendations."
+  value       = module.forecasting.recommendations_table
+}

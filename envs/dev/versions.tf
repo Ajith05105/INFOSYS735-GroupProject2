@@ -7,6 +7,11 @@ terraform {
       version = "~> 6.66"
     }
 
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.7"
+    }
+
     random = {
       source  = "hashicorp/random"
       version = "~> 3.7"

@@ -1,3 +1,5 @@
+data "aws_region" "current" {}
+
 # Latest Amazon Linux 2023 for whichever CPU architecture the instance type uses
 data "aws_ec2_instance_type" "app" {
   instance_type = var.instance_type
@@ -67,8 +69,11 @@ resource "aws_launch_template" "app" {
   update_default_version = true
 
   user_data = base64encode(templatefile("${path.module}/user_data.sh", {
-    app_port = var.app_port
-    db_host  = var.db_host
+    app_port      = var.app_port
+    db_host       = var.db_host
+    db_name       = var.db_name
+    db_secret_arn = var.db_secret_arn
+    aws_region    = data.aws_region.current.region
   }))
 
   iam_instance_profile {

@@ -132,6 +132,46 @@ data "aws_iam_policy_document" "deploy" {
     }
   }
 
+  # Edge module: CloudFront is a global service with no region to pin
+  statement {
+    actions   = ["cloudfront:*"]
+    resources = ["*"]
+  }
+
+  # WAF for CloudFront and the CloudFront viewer certificate live in us-east-1
+  statement {
+    actions   = ["acm:*", "wafv2:*"]
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:RequestedRegion"
+      values   = ["us-east-1"]
+    }
+  }
+
+  # Application buckets only, never the state bucket
+  statement {
+    actions = ["s3:*"]
+    resources = [
+      "arn:aws:s3:::anygroup-*-catalogue-*",
+      "arn:aws:s3:::anygroup-*-datalake-*",
+    ]
+  }
+
+  # Forecasting feature: Glue extract and forecast jobs, the Lambda risk
+  # check and DynamoDB results
+  statement {
+    actions   = ["dynamodb:*", "glue:*", "lambda:*"]
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:RequestedRegion"
+      values   = [var.aws_region]
+    }
+  }
+
   # Observability: alert topic, alarms, dashboard and the flow log group
   statement {
     actions   = ["cloudwatch:*", "logs:*", "sns:*"]
@@ -144,7 +184,26 @@ data "aws_iam_policy_document" "deploy" {
     }
   }
 
-  # ELB and Auto Scaling create their service-linked roles on first use
+  # Data module: RDS, plus what manage_master_user_password needs to create
+  # the Secrets Manager secret and encrypt with the AWS managed keys
+  statement {
+    actions = [
+      "kms:CreateGrant",
+      "kms:DescribeKey",
+      "kms:ListAliases",
+      "rds:*",
+      "secretsmanager:*",
+    ]
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:RequestedRegion"
+      values   = [var.aws_region]
+    }
+  }
+
+  # ELB, Auto Scaling and RDS create their service-linked roles on first use
   statement {
     actions   = ["iam:CreateServiceLinkedRole"]
     resources = ["*"]
@@ -152,7 +211,7 @@ data "aws_iam_policy_document" "deploy" {
     condition {
       test     = "StringEquals"
       variable = "iam:AWSServiceName"
-      values   = ["autoscaling.amazonaws.com", "elasticloadbalancing.amazonaws.com"]
+      values   = ["autoscaling.amazonaws.com", "elasticloadbalancing.amazonaws.com", "rds.amazonaws.com"]
     }
   }
 
@@ -225,7 +284,12 @@ data "aws_iam_policy_document" "deploy" {
     condition {
       test     = "StringEquals"
       variable = "iam:PassedToService"
-      values   = ["ec2.amazonaws.com", "vpc-flow-logs.amazonaws.com"]
+      values = [
+        "ec2.amazonaws.com",
+        "glue.amazonaws.com",
+        "lambda.amazonaws.com",
+        "vpc-flow-logs.amazonaws.com",
+      ]
     }
   }
 }
@@ -251,6 +315,7 @@ data "aws_iam_policy_document" "workload_boundary" {
   statement {
     actions = [
       "cloudwatch:*",
+      "dynamodb:*",
       "ec2:Describe*",
       "ec2messages:*",
       "glue:*",
@@ -263,6 +328,15 @@ data "aws_iam_policy_document" "workload_boundary" {
       "sns:Publish",
       "ssm:*",
       "ssmmessages:*",
+
+      # Glue jobs create network interfaces in the VPC and check their role
+      "ec2:CreateNetworkInterface",
+      "ec2:CreateTags",
+      "ec2:DeleteNetworkInterface",
+      "ec2:DeleteTags",
+      "iam:GetRole",
+      "iam:GetRolePolicy",
+      "iam:ListRolePolicies",
     ]
     resources = ["*"]
   }
