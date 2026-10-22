@@ -1,6 +1,6 @@
-output "glue_job_name" {
-  description = "Run this job to start the whole forecasting chain on demand."
-  value       = aws_glue_job.extract.name
+output "run_now_trigger" {
+  description = "Start this Glue trigger to run the whole forecasting chain on demand."
+  value       = aws_glue_trigger.run_now.name
 }
 
 output "recommendations_table" {

@@ -43,9 +43,9 @@ output "site_url" {
   value       = module.edge.site_url
 }
 
-output "forecast_glue_job" {
-  description = "Run this Glue job to start the forecasting chain on demand."
-  value       = module.forecasting.glue_job_name
+output "forecast_run_now_trigger" {
+  description = "Start this Glue trigger to run the forecasting chain on demand."
+  value       = module.forecasting.run_now_trigger
 }
 
 output "recommendations_table" {

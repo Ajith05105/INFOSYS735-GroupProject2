@@ -1,19 +1,19 @@
-"""SageMaker processing job: forecast daily demand per product.
+"""Glue Python shell job: forecast daily demand per product.
 
 Replaces Amazon Forecast, which is closed to new customers. Reads the
-curated daily sales Glue produced and writes a 14-day forecast per product
-to the curated zone, where it triggers the perishable risk check.
+curated daily sales the extract job produced and writes a 14-day forecast
+per product to the curated zone, where it triggers the perishable risk check.
 
 Model: additive Holt-Winters with weekly seasonality, which captures the
 level, trend and weekend peaks a supermarket sees.
-ponytail: fixed smoothing constants. Fit them per product (or switch to
-SageMaker DeepAR) once there is enough real history to tune against.
+ponytail: fixed smoothing constants. Fit them per product once there is
+enough real history to tune against.
 """
 
-import glob
+import sys
 
-INPUT = "/opt/ml/processing/input"
-OUTPUT = "/opt/ml/processing/output/demand.csv"
+INPUT = "curated/sales_daily/"
+OUTPUT = "curated/forecasts/demand.csv"
 SEASON = 7  # days
 HORIZON = 14  # days
 
@@ -36,9 +36,21 @@ def holt_winters(y, season, horizon, alpha=0.3, beta=0.05, gamma=0.2):
 
 
 def main():
-    import pandas as pd
+    import io
 
-    sales = pd.concat(pd.read_csv(f) for f in glob.glob(f"{INPUT}/*.csv"))
+    import boto3
+    import pandas as pd
+    from awsglue.utils import getResolvedOptions
+
+    bucket = getResolvedOptions(sys.argv, ["BUCKET"])["BUCKET"]
+    s3 = boto3.client("s3")
+
+    # The extract writes one CSV part file per run
+    listing = s3.list_objects_v2(Bucket=bucket, Prefix=INPUT).get("Contents", [])
+    keys = [o["Key"] for o in listing if o["Key"].endswith(".csv")]
+    sales = pd.concat(
+        pd.read_csv(io.BytesIO(s3.get_object(Bucket=bucket, Key=key)["Body"].read())) for key in keys
+    )
     sales["DAY"] = pd.to_datetime(sales["DAY"])
 
     rows = []
@@ -53,7 +65,7 @@ def main():
                 "PREDICTED_QUANTITY": round(max(quantity, 0.0), 1),
             })
 
-    pd.DataFrame(rows).to_csv(OUTPUT, index=False)
+    s3.put_object(Bucket=bucket, Key=OUTPUT, Body=pd.DataFrame(rows).to_csv(index=False))
     print(f"Wrote {len(rows)} forecast rows for {sales['PRODUCT_ID'].nunique()} products")
 
 

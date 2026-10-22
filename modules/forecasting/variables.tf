@@ -43,15 +43,3 @@ variable "alert_email" {
   description = "Address subscribed to perishable stock alerts. Null skips the subscription."
   default     = null
 }
-
-variable "forecast_instance_type" {
-  type        = string
-  description = "SageMaker processing instance for the forecast job."
-  default     = "ml.t3.medium"
-}
-
-variable "forecast_image_uri" {
-  type        = string
-  description = "Override for the forecast container image. Null uses AWS's scikit-learn image for the region."
-  default     = null
-}

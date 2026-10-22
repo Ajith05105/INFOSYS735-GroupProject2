@@ -143,10 +143,10 @@ data "aws_iam_policy_document" "deploy" {
     ]
   }
 
-  # Forecasting feature: Glue extract, SageMaker forecast pipeline, the
-  # EventBridge rule between them, the Lambda risk check and DynamoDB results
+  # Forecasting feature: Glue extract and forecast jobs, the Lambda risk
+  # check and DynamoDB results
   statement {
-    actions   = ["dynamodb:*", "events:*", "glue:*", "lambda:*", "sagemaker:*"]
+    actions   = ["dynamodb:*", "glue:*", "lambda:*"]
     resources = ["*"]
 
     condition {
@@ -270,10 +270,8 @@ data "aws_iam_policy_document" "deploy" {
       variable = "iam:PassedToService"
       values = [
         "ec2.amazonaws.com",
-        "events.amazonaws.com",
         "glue.amazonaws.com",
         "lambda.amazonaws.com",
-        "sagemaker.amazonaws.com",
         "vpc-flow-logs.amazonaws.com",
       ]
     }
@@ -309,7 +307,6 @@ data "aws_iam_policy_document" "workload_boundary" {
       "kms:GenerateDataKey",
       "logs:*",
       "s3:*",
-      "sagemaker:*",
       "secretsmanager:DescribeSecret",
       "secretsmanager:GetSecretValue",
       "sns:Publish",
@@ -324,26 +321,8 @@ data "aws_iam_policy_document" "workload_boundary" {
       "iam:GetRole",
       "iam:GetRolePolicy",
       "iam:ListRolePolicies",
-
-      # SageMaker pulls AWS's prebuilt images from ECR
-      "ecr:BatchCheckLayerAvailability",
-      "ecr:BatchGetImage",
-      "ecr:GetAuthorizationToken",
-      "ecr:GetDownloadUrlForLayer",
     ]
     resources = ["*"]
-  }
-
-  # The forecast pipeline hands its own role to the processing job it starts
-  statement {
-    actions   = ["iam:PassRole"]
-    resources = ["arn:aws:iam::${local.account_id}:role/anygroup/*"]
-
-    condition {
-      test     = "StringEquals"
-      variable = "iam:PassedToService"
-      values   = ["sagemaker.amazonaws.com"]
-    }
   }
 }
 

@@ -1,8 +1,8 @@
 """Lambda: turn a demand forecast into perishable stock actions (BR18).
 
-Triggered when SageMaker writes a forecast to curated/forecasts/. For each
-perishable product it compares predicted demand over the forecast window
-with stock on hand and stock that expires inside the window:
+Triggered when the Glue forecast job writes a forecast to curated/forecasts/.
+For each perishable product it compares predicted demand over the forecast
+window with stock on hand and stock that expires inside the window:
 
   MARKDOWN  more stock expires in the window than will sell: discount the
             surplus now instead of binning it later
