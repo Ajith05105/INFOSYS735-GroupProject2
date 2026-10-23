@@ -15,17 +15,17 @@ variable "glue_subnet_id" {
 
 variable "db_sg_id" {
   type        = string
-  description = "Database security group. Glue is allowed in on the Oracle port."
+  description = "Database security group. Glue is allowed in on the PostgreSQL port."
 }
 
 variable "db_host" {
   type        = string
-  description = "Oracle endpoint."
+  description = "PostgreSQL endpoint."
 }
 
 variable "db_name" {
   type        = string
-  description = "Oracle database (service) name."
+  description = "PostgreSQL database name."
 }
 
 variable "db_secret_arn" {

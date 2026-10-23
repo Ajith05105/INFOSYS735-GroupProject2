@@ -19,7 +19,7 @@ output "app_sg_id" {
 }
 
 output "db_sg_id" {
-  description = "Security group for the RDS Oracle instance."
+  description = "Security group for the RDS PostgreSQL instance."
   value       = aws_security_group.this["db"].id
 }
 

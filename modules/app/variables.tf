@@ -59,7 +59,7 @@ variable "max_size" {
 
 variable "db_name" {
   type        = string
-  description = "Oracle database (service) name, for seeding sample data."
+  description = "PostgreSQL database name, for seeding sample data."
   default     = ""
 }
 

@@ -1,4 +1,4 @@
-"""Glue job: copy sales and inventory out of Oracle into the data lake.
+"""Glue job: copy sales and inventory out of PostgreSQL into the data lake.
 
 This is the CQRS sync step. The query side (data lake, forecasting, risk
 checks) reads this copy, never the live transactional database, so analysis
@@ -22,23 +22,26 @@ lake = f"s3://{args['BUCKET']}"
 
 
 def extract(table):
-    """Read one Oracle table through the Glue connection and land it in raw/."""
+    """Read one PostgreSQL table through the Glue connection and land it in raw/."""
     frame = glue.create_dynamic_frame.from_options(
-        connection_type="oracle",
+        connection_type="postgresql",
         connection_options={
             "useConnectionProperties": "true",
             "connectionName": args["CONNECTION_NAME"],
             "dbtable": table,
         },
     )
+    # PostgreSQL folds names to lower case; the forecast and risk check
+    # expect the upper case column names
     df = frame.toDF()
-    df.write.mode("overwrite").parquet(f"{lake}/raw/{table.lower()}/")
+    df = df.toDF(*[c.upper() for c in df.columns])
+    df.write.mode("overwrite").parquet(f"{lake}/raw/{table}/")
     return df
 
 
-products = extract("PRODUCTS")
-sales = extract("SALES")
-batches = extract("INVENTORY_BATCH")
+products = extract("products")
+sales = extract("sales")
+batches = extract("inventory_batch")
 
 daily = (
     sales.groupBy("PRODUCT_ID", F.to_date("SALE_DATE").alias("DAY"))

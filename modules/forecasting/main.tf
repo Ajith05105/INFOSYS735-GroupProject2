@@ -1,11 +1,11 @@
 # Perishable stock forecasting (BR18), built on the CQRS split in the design
-# patterns document. Oracle stays the command side; everything here is the
+# patterns document. PostgreSQL stays the command side; everything here is the
 # query side and never touches checkout:
 #
-#   Oracle --Glue (nightly)--> data lake raw/ + curated/
-#          --extract succeeded--> Glue Python shell job (forecast)
-#          --forecast lands--> Lambda perishable risk check
-#          --> DynamoDB recommendations + SNS alert to managers
+#   PostgreSQL --Glue (nightly)--> data lake raw/ + curated/
+#              --extract succeeded--> Glue Python shell job (forecast)
+#              --forecast lands--> Lambda perishable risk check
+#              --> DynamoDB recommendations + SNS alert to managers
 
 terraform {
   required_providers {
@@ -99,14 +99,14 @@ resource "aws_iam_role_policy" "app_secret" {
 }
 
 # ---------------------------------------------------------------------------
-# Glue: extract from Oracle over JDBC inside the VPC. The connection lives in
+# Glue: extract from PostgreSQL over JDBC inside the VPC. The connection lives in
 # an app subnet, which has the S3 endpoint and NAT Glue needs, and the data
-# tier only lets it in on the Oracle port.
+# tier only lets it in on the PostgreSQL port.
 # ---------------------------------------------------------------------------
 
 resource "aws_security_group" "glue" {
   name        = "${local.name}-glue-sg"
-  description = "Glue job ENIs: talk to each other, reach Oracle, S3 and AWS APIs"
+  description = "Glue job ENIs: talk to each other, reach PostgreSQL, S3 and AWS APIs"
   vpc_id      = data.aws_subnet.glue.vpc_id
 
   tags = {
@@ -126,7 +126,7 @@ resource "aws_vpc_security_group_ingress_rule" "glue_self" {
 
 resource "aws_vpc_security_group_egress_rule" "glue_all" {
   security_group_id = aws_security_group.glue.id
-  description       = "oracle-s3-and-aws-apis"
+  description       = "postgres-s3-and-aws-apis"
   ip_protocol       = "-1"
   cidr_ipv4         = "0.0.0.0/0"
 }
@@ -135,17 +135,17 @@ resource "aws_vpc_security_group_ingress_rule" "db_from_glue" {
   security_group_id            = var.db_sg_id
   description                  = "db-from-glue"
   ip_protocol                  = "tcp"
-  from_port                    = 1521
-  to_port                      = 1521
+  from_port                    = 5432
+  to_port                      = 5432
   referenced_security_group_id = aws_security_group.glue.id
 }
 
-resource "aws_glue_connection" "oracle" {
-  name            = "${local.name}-oracle"
+resource "aws_glue_connection" "postgres" {
+  name            = "${local.name}-postgres"
   connection_type = "JDBC"
 
   connection_properties = {
-    JDBC_CONNECTION_URL = "jdbc:oracle:thin://@${var.db_host}:1521/${var.db_name}"
+    JDBC_CONNECTION_URL = "jdbc:postgresql://${var.db_host}:5432/${var.db_name}"
     SECRET_ID           = var.db_secret_arn
   }
 
@@ -210,7 +210,7 @@ resource "aws_glue_job" "extract" {
   worker_type       = "G.1X"
   number_of_workers = 2
   timeout           = 15 # minutes
-  connections       = [aws_glue_connection.oracle.name]
+  connections       = [aws_glue_connection.postgres.name]
 
   command {
     name            = "glueetl"
@@ -219,7 +219,7 @@ resource "aws_glue_job" "extract" {
   }
 
   default_arguments = {
-    "--CONNECTION_NAME"                  = aws_glue_connection.oracle.name
+    "--CONNECTION_NAME"                  = aws_glue_connection.postgres.name
     "--BUCKET"                           = aws_s3_bucket.lake.id
     "--enable-continuous-cloudwatch-log" = "true"
   }
