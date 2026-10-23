@@ -1,7 +1,9 @@
-# Transactional database: RDS for PostgreSQL. RDS owns patching and backups
-# (BR11). The design is Oracle SE2 Multi-AZ, but Oracle and the Multi-AZ
-# standby would quickly use up the AWS Free plan credits, and the Free plan
-# caps backups at one day, so dev runs a single PostgreSQL micro instance.
+# Transactional database: RDS for PostgreSQL, Multi-AZ. RDS owns patching,
+# backups and failover (BR11). Writes commit synchronously to a standby in the
+# other AZ; if the primary fails, RDS promotes the standby and repoints the
+# endpoint with no connection string change (BR1). The design uses Oracle SE2;
+# dev runs PostgreSQL on a micro instance to fit the AWS Free plan, which also
+# caps backups at one day.
 
 resource "aws_db_subnet_group" "this" {
   name        = "anygroup-${var.environment}-data-subnets"
@@ -21,7 +23,7 @@ resource "aws_db_instance" "postgres" {
   # automatically. It never appears in Terraform state, code or a pipeline.
   manage_master_user_password = true
 
-  multi_az               = false # Free plan
+  multi_az               = true
   db_subnet_group_name   = aws_db_subnet_group.this.name
   vpc_security_group_ids = [var.db_sg_id]
   publicly_accessible    = false
