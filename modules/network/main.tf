@@ -266,6 +266,7 @@ locals {
       ingress = concat(
         [for c in local.tier_cidrs.web : { protocol = "tcp", from = 80, to = 80, cidr = c }],                     # web to the internal ALB
         [for c in local.tier_cidrs.app : { protocol = "tcp", from = var.app_port, to = var.app_port, cidr = c }], # internal ALB to app, across AZs
+        [for c in local.tier_cidrs.app : { protocol = "tcp", from = 1024, to = 65535, cidr = c }],                # app replies to the internal ALB in the other AZ (ALB nodes use 1024-65535)
         [local.replies],
       )
       egress = [local.all_out]
