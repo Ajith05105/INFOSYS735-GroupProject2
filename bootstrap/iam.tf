@@ -52,6 +52,16 @@ data "aws_iam_policy_document" "plan" {
     actions   = ["ec2:GetManagedPrefixListEntries"]
     resources = ["*"]
   }
+
+  # Forecasting module refreshes the Glue connection to the database. It holds
+  # only a Secrets Manager reference, never the password itself.
+  statement {
+    actions = ["glue:GetConnection"]
+    resources = [
+      "arn:aws:glue:${var.aws_region}:${local.account_id}:catalog",
+      "arn:aws:glue:${var.aws_region}:${local.account_id}:connection/anygroup-*",
+    ]
+  }
 }
 
 resource "aws_iam_role_policy" "plan" {
