@@ -237,29 +237,29 @@ resource "aws_glue_trigger" "nightly" {
 }
 
 # ---------------------------------------------------------------------------
-# Forecast: replaces Amazon Forecast. A Glue Python shell job runs the
-# forecast script on the curated sales and writes the result to
-# curated/forecasts/. SageMaker's scikit-learn image is not published in
-# ap-southeast-6, so the script runs on Glue instead. 1/16 DPU, billed per
-# second while it runs.
+# Forecast: replaces Amazon Forecast. A Glue job runs the forecast script on
+# the curated sales and writes the result to curated/forecasts/. SageMaker's
+# scikit-learn image is not published in ap-southeast-6, and Glue Python
+# shell jobs are rejected there too, so it runs as a small Glue 4.0 job like
+# the extract (pandas is included). Billed per second, about a minute a run.
 # ---------------------------------------------------------------------------
 
 resource "aws_glue_job" "forecast" {
-  name         = "${local.name}-demand-forecast"
-  role_arn     = aws_iam_role.glue.arn
-  glue_version = "3.0" # Python shell 3.9 runs on Glue 3.0; the default is rejected
-  max_capacity = 0.0625
-  timeout      = 15 # minutes
+  name              = "${local.name}-demand-forecast"
+  role_arn          = aws_iam_role.glue.arn
+  glue_version      = "4.0"
+  worker_type       = "G.1X"
+  number_of_workers = 2  # the minimum
+  timeout           = 15 # minutes
 
   command {
-    name            = "pythonshell"
-    python_version  = "3.9"
+    name            = "glueetl"
+    python_version  = "3"
     script_location = "s3://${aws_s3_bucket.lake.id}/${aws_s3_object.forecast_script.key}"
   }
 
   default_arguments = {
-    "--BUCKET"    = aws_s3_bucket.lake.id
-    "library-set" = "analytics" # pandas
+    "--BUCKET" = aws_s3_bucket.lake.id
   }
 }
 

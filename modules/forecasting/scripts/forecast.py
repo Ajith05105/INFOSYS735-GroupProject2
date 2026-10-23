@@ -1,4 +1,4 @@
-"""Glue Python shell job: forecast daily demand per product.
+"""Glue job: forecast daily demand per product.
 
 Replaces Amazon Forecast, which is closed to new customers. Reads the
 curated daily sales the extract job produced and writes a 14-day forecast
