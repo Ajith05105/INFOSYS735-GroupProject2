@@ -247,6 +247,7 @@ resource "aws_glue_trigger" "nightly" {
 resource "aws_glue_job" "forecast" {
   name         = "${local.name}-demand-forecast"
   role_arn     = aws_iam_role.glue.arn
+  glue_version = "3.0" # Python shell 3.9 runs on Glue 3.0; the default is rejected
   max_capacity = 0.0625
   timeout      = 15 # minutes
 
